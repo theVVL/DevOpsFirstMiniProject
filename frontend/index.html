@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>DevOps 3-Tier App</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #eef2f3; margin: 40px; display: flex; flex-direction: column; align-items: center; }
+        .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 500px; }
+        h1 { color: #2c3e50; font-size: 24px; text-align: center; }
+        ul { list-style: none; padding: 0; }
+        li { background: #f8f9fa; padding: 12px 15px; margin-bottom: 8px; border-left: 5px solid #3498db; border-radius: 4px; display: flex; justify-content: space-between; font-weight: bold; }
+        .status { text-align: center; color: #7f8c8d; font-size: 14px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+      <div class="container">
+        <h1>Сотрудники (Данные из PostgreSQL)</h1>
+        
+        <!-- НОВАЯ ФОРМА ДЛЯ ДОБАВЛЕНИЯ -->
+        <form id="add-user-form" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="user-name" placeholder="Имя сотрудника" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+            <input type="text" id="user-role" placeholder="Должность" required style="padding: 10px; border: 1px solid #ccc; border-radius: 4px;">
+            <button type="submit" style="padding: 10px; background: #2ecc71; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Добавить</button>
+        </form>
+
+        <ul id="users-list">Загрузка данных...</ul>
+        <div class="status">Фронтенд запущен в контейнере Nginx</div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
