@@ -15,13 +15,24 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
+
+    healthcheck:
+      # Какую команду выполнить внутри контейнера для проверки:
+      # Утилита pg_isready проверяет, принимает ли Postgres подключения.
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 10s      # Как часто проверять (каждые 10 секунд)
+      timeout: 5s        # Сколько времени ждать ответа (максимум 5 секунд)
+      retries: 3         # Сколько раз разрешено ошибиться перед тем, как признать контейнер больным
+      start_period: 10s  # Даем базе 10 секунд на первый запуск, в это время проверки не считаются ошибкой
+    # --- КОНЕЦ БЛОКА HEALTHCHECK ---
+
     # Подключение постоянных хранилищ (томов)
     volumes:     
       # Именованный том для сохранения данных базы при перезапуске контейнера
       - pgdata:/var/lib/postgresql/data
     # Открытие порта внутри виртуальной сети Docker (изолировано от внешнего мира)
     ports:
-      - "5432"
+      - ${DB_PORT}
 
   # --- БЭКЕНД (Node.js) ---
   backend:
@@ -41,7 +52,9 @@ services:
       PORT: ${BACKEND_PORT}
     # Порядок запуска: бэкенд начнет стартовать только ПОСЛЕ контейнера database
     depends_on:
-      - database
+      database:
+        condition: service_healthy
+      
 
   # --- ФРОНТЕНД (Nginx / Интерфейс) ---
   frontend:
@@ -51,7 +64,7 @@ services:
     container_name: devops-frontend
     # Проброс стандартного веб-порта (доступен в браузере по http://localhost:8080)
     ports:
-      - "8080:80"
+      - "8080:${FRONT_PORT}"
     # Порядок запуска: фронтенд стартует только ПОСЛЕ контейнера backend
     depends_on:
       - backend
