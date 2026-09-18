@@ -1,45 +1,62 @@
+# Версия формата Docker Compose
 version: '3.8'
 
+# Список всех контейнеров (сервисов) приложения
 services:
-  # 1. Контейнер базы данных
+
+  # --- БАЗА ДАННЫХ (PostgreSQL) ---
   database:
-    image: postgres:16-alpine
+    # Сборка кастомного образа из Dockerfile в папке ./database
+    build: ./database
+    # Постоянное имя контейнера в системе
     container_name: devops-postgres
+    # Переменные окружения (значения подставляются из файла .env)
     environment:
-      POSTGRES_USER: devops_user
-      POSTGRES_PASSWORD: super_secret_password
-      POSTGRES_DB: employees_db
-    volumes:
-      # Прокидываем скрипт инициализации в дефолтную папку Postgres
-      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
-      # Сохраняем данные БД на хосте, чтобы они не стирались при перезапуске
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    # Подключение постоянных хранилищ (томов)
+    volumes:     
+      # Именованный том для сохранения данных базы при перезапуске контейнера
       - pgdata:/var/lib/postgresql/data
-    expose:
+    # Открытие порта внутри виртуальной сети Docker (изолировано от внешнего мира)
+    ports:
       - "5432"
 
-  # 2. Контейнер бэкенда (Node.js)
+  # --- БЭКЕНД (Node.js) ---
   backend:
+    # Сборка образа приложения из Dockerfile в папке ./backend
     build: ./backend
+    # Постоянное имя контейнера бэкенда
     container_name: devops-backend
+    # Проброс динамического порта из .env наружу (ПК:Контейнер)
     ports:
-      - "5001:5001"
+      - "${BACKEND_PORT}:${BACKEND_PORT}"
+    # Передача настроек подключения к БД и порта внутрь Node.js приложения
     environment:
-      DB_HOST: database # Имя сервиса БД в сети Docker
-      DB_USER: devops_user
-      DB_PASSWORD: super_secret_password
-      DB_NAME: employees_db
-      PORT: 5001
+      DB_HOST: database # Имя сервиса базы данных в качестве хоста
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      PORT: ${BACKEND_PORT}
+    # Порядок запуска: бэкенд начнет стартовать только ПОСЛЕ контейнера database
     depends_on:
       - database
 
-  # 3. Контейнер фронтенда (Nginx)
+  # --- ФРОНТЕНД (Nginx / Интерфейс) ---
   frontend:
+    # Сборка образа интерфейса из Dockerfile в папке ./frontend
     build: ./frontend
+    # Постоянное имя контейнера фронтенда
     container_name: devops-frontend
+    # Проброс стандартного веб-порта (доступен в браузере по http://localhost:8080)
     ports:
-      - "8080:80" # Открываем фронтенд на порту 8080 вашего Mac
+      - "8080:80"
+    # Порядок запуска: фронтенд стартует только ПОСЛЕ контейнера backend
     depends_on:
       - backend
 
+# Объявление именованных томов, используемых в конфигурации
 volumes:
+  # Выделение изолированного места на диске под данные PostgreSQL
   pgdata:
