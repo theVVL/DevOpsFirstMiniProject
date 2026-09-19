@@ -8,10 +8,10 @@ app.use(express.json());
 
 // Переменные подключения берутся из окружения (задаются в docker-compose)
 const pool = new Pool({
-  host: process.env.DB_HOST || 'localhost',
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || 'secret',
-  database: process.env.DB_NAME || 'devops_db',
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   port: 5432,
 });
 
@@ -47,7 +47,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Backend server is running on port ${PORT}`);
 });
