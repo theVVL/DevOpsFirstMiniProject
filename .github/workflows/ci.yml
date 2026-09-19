@@ -173,7 +173,7 @@ jobs:
 
   # --- ЭТАП 4: ДЕПЛОЙ НА ВАШ MACBOOK С КНОПКОЙ ---
   deploy-to-macbook:
-    name: 🚀 Релиз на локальный MacBook
+    name: 🚀 Релиз на локальный MacBook!!!
     # 💥 МАГИЯ ДЕВОПСА: вместо ubuntu-latest мы пишем self-hosted!
     # Это заставит GitHub выполнять команды прямо на вашем включенном Mac
     runs-on: self-hosted
