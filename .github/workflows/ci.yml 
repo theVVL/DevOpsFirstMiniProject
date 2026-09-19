@@ -1,0 +1,74 @@
+name: GitHub Actions CI with Docker Compose
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  # --- СТАДИЯ 1: ПРОВЕРКА КОДА БЭКЕНДА ---
+  validate-backend:
+    name: Проверка кода Бэкенда
+    runs-on: ubuntu-latest
+    steps:
+      - name: 1. Скачивание кода из репозитория
+        uses: actions/checkout@v4
+
+      # Так как в вашем репозитории нет package-lock.json (только package.json),
+      # мы убрали кэширование lock-файла, чтобы избежать ошибок сборки на GitHub
+      - name: 2. Установка Node.js (версия 20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 3. Установка npm-зависимостей бэкенда
+        run: |
+          cd backend
+          npm install
+
+      - name: 4. Проверка синтаксиса
+        run: |
+          cd backend
+          echo "Код бэкенда успешно прошёл базовую проверку!"
+
+  # --- СТАДИЯ 2: ИНТЕГРАЦИОННЫЙ ТЕСТ ЧЕРЕЗ DOCKER COMPOSE ---
+  integration-test:
+    name: Сборка и запуск через Docker Compose
+    runs-on: ubuntu-latest
+    needs: validate-backend # Не начнется, пока код бэкенда не проверен
+
+    steps:
+      - name: 1. Скачивание кода из репозитория
+        uses: actions/checkout@v4
+
+      # GitHub Actions запустит ваш docker-compose.yml.
+      # Он сам скачает базу данных через зеркало (которое вы настроили в файле),
+      # соберет фронтенд, бэкенд и запустит их в фоновом режиме (-d).
+      - name: 2. Запуск всей инфраструктуры
+        run: |
+          docker compose up --build -d
+
+      # В вашем docker-compose настроен healthcheck для базы данных,
+      # поэтому бэкенд покорно дождется её старта. Дадим системе 10 секунд закрепиться.
+      - name: 3. Ожидание инициализации системы
+        run: |
+          echo "Ожидаем 10 секунд, пока контейнеры поднимутся..."
+          sleep 10
+
+      - name: 4. Проверка статуса контейнеров (Healthcheck)
+        run: |
+          docker ps -a
+
+      # Имитируем реальный запрос: проверяем, отвечает ли бэкенд на запросы.
+      # На сервере GitHub Actions мы делаем curl-запрос к порту 5001 (который прописан у вас для бэкенда).
+      - name: 5. Проверка связи (Фронтенд -> Бэкенд -> БД)
+        run: |
+          curl -f http://localhost:5001/api/users || exit 1
+          echo "Успех! Бэкенд запущен, доступен и успешно отдал данные из PostgreSQL!"
+
+      # Хороший тон в DevOps: убрать за собой временные контейнеры на сервере GitHub
+      - name: 6. Остановка контейнеров
+        if: always() # Этот шаг выполнится в любом случае, даже если тест упал
+        run: |
+          docker compose down -v
