@@ -82,3 +82,4 @@ jobs:
           DB_NAME: dummy_employees_db
         run: |
           docker compose down -v
+          echo "Успех в облаке и успешно отдал тестовые данные!"
